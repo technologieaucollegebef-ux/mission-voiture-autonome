@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutonoTech - Mission Voiture Autonome 3ème</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        rajdhani: ['Rajdhani', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        tech: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                            dark: '#0a0f1d',
+                            card: '#111827',
+                            border: '#1f2937',
+                            neon: '#00f0ff',
+                            accent: '#10b981',
+                            danger: '#ef4444',
+                            warning: '#f59e0b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #060913;
+            color: #f3f4f6;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        .neon-border {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+        .neon-text-blue {
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0a0f1d;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #0ea5e9;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s infinite;
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen flex flex-col justify-between overflow-x-hidden custom-scrollbar">
+
+    <!-- Header / Navbar Top -->
+    <header class="border-b border-tech-border bg-tech-dark/80 backdrop-blur-md sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-tech-500/20 p-2 rounded-xl border border-tech-neon/40 text-tech-neon">
+                    <i data-lucide="cpu" class="w-6 h-6 animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="font-orbitron font-bold text-lg text-white tracking-wider flex items-center gap-2">
+                        AUTONOTECH <span class="text-xs px-2 py-0.5 rounded bg-tech-500/20 text-tech-neon border border-tech-500/30">LABS 3e</span>
+                    </h1>
+                    <p class="text-xs text-gray-400 font-rajdhani">Module Technologie BO n°9 - OST (Intelligence Artificielle)</p>
+                </div>
+            </div>
+
+            <!-- Stats & XP Bar -->
+            <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+                    <span id="badge-count" class="font-orbitron text-sm font-bold text-amber-400">0/4 Badges</span>
+                </div>
+                <div class="flex flex-col w-32 md:w-48">
+                    <div class="flex justify-between text-xs font-rajdhani mb-1 font-semibold">
+                        <span class="text-gray-300">PROGRESSION XP</span>
+                        <span id="xp-text" class="text-tech-neon">0 / 400 XP</span>
+                    </div>
+                    <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden p-0.5 border border-gray-700">
+                        <div id="xp-bar" class="bg-gradient-to-r from-tech-500 to-tech-accent h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <button id="audio-toggle" onclick="toggleAudio()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition" title="Activer/Désactiver le son">
+                    <i data-lucide="volume-x" id="audio-icon" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto w-full p-4 md:p-6 flex-grow flex flex-col justify-center">
+        
+        <!-- Screen 0: Welcome / Onboarding -->
+        <section id="screen-intro" class="space-y-6 text-center max-w-3xl mx-auto py-8">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tech-500/10 border border-tech-500/30 text-tech-neon text-sm font-rajdhani font-semibold mb-2">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i> MISSION APPRENTI INGÉNIEUR
+            </div>
+            <h2 class="font-orbitron font-extrabold text-3xl md:text-5xl text-white tracking-tight leading-tight">
+                CONFIGURE L'IA DE LA <span class="text-transparent bg-clip-text bg-gradient-to-r from-tech-neon to-emerald-400">VOITURE DU FUTUR</span>
+            </h2>
+            <p class="text-gray-300 text-base md:text-lg leading-relaxed font-sans">
+                Bienvenue chez AutonoTech ! En tant que stagiaire, ta mission est de concevoir, entraîner et sécuriser le prototype de véhicule autonome Niveaux 3 & 4. Valide tes compétences en **Evolution des Objets et Systèmes Techniques (OST)** à travers 4 épreuves stratégiques.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left my-8">
+                <div class="bg-tech-card/80 p-4 rounded-xl border border-tech-border flex items-start space-x-3">
+                    <div class="p-2 bg-blue-500/10 text-blue-400 rounded-lg"><i data-lucide="eye" class="w-5 h-5"></i></div>
+                    <div>
+                        <h4 class="font-orbitron text-sm text-white font-bold">1. Capteurs</h4>
+                        <p class="text-xs text-gray-400 mt-1">Identifie le LiDAR, Radar, Caméras et Ultrasons.</p>
+                    </div>
+                </div>
+                <div class="bg-tech-card/80 p-4 rounded-xl border border-tech-border flex items-start space-x-3">
+                    <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg"><i data-lucide="brain" class="w-5 h-5"></i></div>
+                    <div>
+                        <h4 class="font-orbitron text-sm text-white font-bold">2. IA & Éthique</h4>
+                        <p class="text-xs text-gray-400 mt-1">Apprentissage supervisé & contraintes sociétales.</p>
+                    </div>
+                </div>
+                <div class="bg-tech-card/80 p-4 rounded-xl border border-tech-border flex items-start space-x-3">
+                    <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg"><i data-lucide="terminal" class="w-5 h-5"></i></div>
+                    <div>
+                        <h4 class="font-orbitron text-sm text-white font-bold">3. Prompts & Urgences</h4>
+                        <p class="text-xs text-gray-400 mt-1">Rédige un prompt LiDAR et réagis à l'imprévu.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-tech-dark/90 p-4 rounded-xl border border-tech-500/30 text-left mb-6">
+                <label class="block text-xs font-rajdhani text-tech-neon uppercase mb-2 font-bold tracking-wider">Identité de l'élève</label>
+                <div class="flex gap-3">
+                    <input type="text" id="student-name" placeholder="Entre ton Prénom et Nom..." class="flex-grow bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-tech-neon text-sm">
+                    <button onclick="startGame()" class="bg-gradient-to-r from-tech-500 to-tech-accent text-slate-900 font-orbitron font-bold px-6 py-2.5 rounded-lg hover:opacity-90 transition flex items-center gap-2 glow-button">
+                        DÉMARRER <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Level Stepper Navigation -->
+        <div id="level-stepper" class="hidden mb-6 bg-tech-card/60 p-3 rounded-2xl border border-tech-border backdrop-blur">
+            <div class="flex justify-between items-center text-xs font-rajdhani font-bold">
+                <button onclick="switchLevel(1)" id="step-btn-1" class="flex-1 text-center py-2 px-1 rounded-xl transition border border-transparent">NV 1 : CAPTEURS</button>
+                <div class="w-4 h-0.5 bg-gray-700"></div>
+                <button onclick="switchLevel(2)" id="step-btn-2" class="flex-1 text-center py-2 px-1 rounded-xl transition border border-transparent opacity-50 cursor-not-allowed" disabled>NV 2 : APPRENTISSAGE</button>
+                <div class="w-4 h-0.5 bg-gray-700"></div>
+                <button onclick="switchLevel(3)" id="step-btn-3" class="flex-1 text-center py-2 px-1 rounded-xl transition border border-transparent opacity-50 cursor-not-allowed" disabled>NV 3 : PROMPT & SÉCURITÉ</button>
+                <div class="w-4 h-0.5 bg-gray-700"></div>
+                <button onclick="switchLevel(4)" id="step-btn-4" class="flex-1 text-center py-2 px-1 rounded-xl transition border border-transparent opacity-50 cursor-not-allowed" disabled>NV 4 : ENQUÊTE & CHOIX</button>
+            </div>
+        </div>
+
+        <!-- LEVEL 1: CAPTEURS ET COMPOSANTS -->
+        <section id="screen-level-1" class="hidden space-y-6">
+            <div class="bg-tech-card/90 p-6 rounded-2xl border border-tech-border neon-border">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-orbitron text-tech-neon tracking-widest uppercase">Niveau 1 · Connaître (OST1d)</span>
+                        <h2 class="text-2xl font-orbitron font-bold text-white mt-1">Configuration des Capteurs Autonomes</h2>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 text-xs font-bold font-orbitron">+100 XP Max</span>
+                </div>
+
+                <p class="text-sm text-gray-300 mb-6">
+                    Pour remplacer les yeux et le cerveau du conducteur humain, une voiture autonome utilise une combinaison de capteurs. Associe chaque composant à sa fonction principale.
+                </p>
+
+                <!-- Q1.1 Checkbox Challenge -->
+                <div class="mb-8 p-4 bg-gray-900/80 rounded-xl border border-gray-800">
+                    <h3 class="text-sm font-orbitron text-white font-semibold mb-3 flex items-center gap-2">
+                        <i data-lucide="check-square" class="w-4 h-4 text-tech-neon"></i> Q1.1 - Quels capteurs équipent la voiture autonome ? (Sélectionne toutes les bonnes réponses)
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="q11-options">
+                        <label class="flex items-center space-x-3 p-3 rounded-lg bg-gray-800/60 border border-gray-700 hover:border-tech-neon cursor-pointer transition">
+                            <input type="checkbox" value="cam" class="accent-tech-neon w-4 h-4 rounded">
+                            <span class="text-sm text-gray-200">A. Caméras vidéo</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-3 rounded-lg bg-gray-800/60 border border-gray-700 hover:border-tech-neon cursor-pointer transition">
+                            <input type="checkbox" value="rad" class="accent-tech-neon w-4 h-4 rounded">
+                            <span class="text-sm text-gray-200">B. Radars</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-3 rounded-lg bg-gray-800/60 border border-gray-700 hover:border-tech-neon cursor-pointer transition">
+                            <input type="checkbox" value="lid" class="accent-tech-neon w-4 h-4 rounded">
+                            <span class="text-sm text-gray-200">C. LiDAR (télémètre laser)</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-3 rounded-lg bg-gray-800/60 border border-gray-700 hover:border-tech-neon cursor-pointer transition">
+                            <input type="checkbox" value="ult" class="accent-tech-neon w-4 h-4 rounded">
+                            <span class="text-sm text-gray-200">D. Capteurs ultrasons</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-3 rounded-lg bg-gray-800/60 border border-gray-700 hover:border-tech-neon cursor-pointer transition">
+                            <input type="checkbox" value="thermo" class="accent-tech-neon w-4 h-4 rounded">
+                            <span class="text-sm text-gray-200">E. Thermomètre médical</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Q1.3 Matching Game -->
+                <div class="p-4 bg-gray-900/80 rounded-xl border border-gray-800 mb-6">
+                    <h3 class="text-sm font-orbitron text-white font-semibold mb-3 flex items-center gap-2">
+                        <i data-lucide="arrow-right-left" class="w-4 h-4 text-tech-neon"></i> Q1.2 - Association Capteur <i data-lucide="arrow-right" class="w-3 h-3"></i> Fonction
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div class="p-3 bg-gray-800 rounded-lg flex justify-between items-center text-sm border border-gray-700">
+                                <span>1. Caméra vidéo</span>
+                                <select id="match-1" class="bg-gray-900 text-tech-neon border border-gray-700 rounded px-2 py-1 text-xs font-mono">
+                                    <option value="">Choisir fonction...</option>
+                                    <option value="A">A. Détecter obstacles courte distance</option>
+                                    <option value="B">B. Carte 3D haute précision</option>
+                                    <option value="C">C. Reconnaître les panneaux & couleurs</option>
+                                    <option value="D">D. Vitesse & distance par tous temps</option>
+                                </select>
+                            </div>
+                            <div class="p-3 bg-gray-800 rounded-lg flex justify-between items-center text-sm border border-gray-700">
+                                <span>2. Radar</span>
+                                <select id="match-2" class="bg-gray-900 text-tech-neon border border-gray-700 rounded px-2 py-1 text-xs font-mono">
+                                    <option value="">Choisir fonction...</option>
+                                    <option value="A">A. Détecter obstacles courte distance</option>
+                                    <option value="B">B. Carte 3D haute précision</option>
+                                    <option value="C">C. Reconnaître les panneaux & couleurs</option>
+                                    <option value="D">D. Vitesse & distance par tous temps</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-gray-800 rounded-lg flex justify-between items-center text-sm border border-gray-700">
+                                <span>3. LiDAR (Laser)</span>
+                                <select id="match-3" class="bg-gray-900 text-tech-neon border border-gray-700 rounded px-2 py-1 text-xs font-mono">
+                                    <option value="">Choisir fonction...</option>
+                                    <option value="A">A. Détecter obstacles courte distance</option>
+                                    <option value="B">B. Carte 3D haute précision</option>
+                                    <option value="C">C. Reconnaître les panneaux & couleurs</option>
+                                    <option value="D">D. Vitesse & distance par tous temps</option>
+                                </select>
+                            </div>
+                            <div class="p-3 bg-gray-800 rounded-lg flex justify-between items-center text-sm border border-gray-700">
+                                <span>4. Capteurs Ultrasons</span>
+                                <select id="match-4" class="bg-gray-900 text-tech-neon border border-gray-700 rounded px-2 py-1 text-xs font-mono">
+                                    <option value="">Choisir fonction...</option>
+                                    <option value="A">A. Détecter obstacles courte distance</option>
+                                    <option value="B">B. Carte 3D haute précision</option>
+                                    <option value="C">C. Reconnaître les panneaux & couleurs</option>
+                                    <option value="D">D. Vitesse & distance par tous temps</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <div id="l1-feedback" class="text-sm font-semibold"></div>
+                    <button onclick="validateLevel1()" class="bg-tech-500 hover:bg-tech-600 text-slate-900 font-orbitron font-bold px-6 py-2.5 rounded-lg transition flex items-center gap-2 glow-button">
+                        VALIDER LE NIVEAU 1 <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: APPRENTISSAGE ET IMPACTS SOCIÉTAUX -->
+        <section id="screen-level-2" class="hidden space-y-6">
+            <div class="bg-tech-card/90 p-6 rounded-2xl border border-tech-border neon-border">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-orbitron text-emerald-400 tracking-widest uppercase">Niveau 2 · Comprendre (OST1e / OST1f)</span>
+                        <h2 class="text-2xl font-orbitron font-bold text-white mt-1">Entraînement de l'IA & Enjeux Sociétaux</h2>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold font-orbitron">+100 XP Max</span>
+                </div>
+
+                <!-- Simulation Interactive: Apprentissage Supervisé -->
+                <div class="p-5 bg-gray-900/90 rounded-xl border border-gray-800 mb-6">
+                    <h3 class="text-sm font-orbitron text-white font-semibold mb-2 flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> Mini-Lab IA : Entraînement sur le panneau STOP
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        L'apprentissage supervisé nécessite des milliers d'exemples **étiquetés**. Clique sur les panneaux STOP pour les étiqueter correctement et entraîner le réseau de neurones !
+                    </p>
+
+                    <div class="flex flex-col md:flex-row items-center gap-6 bg-tech-dark p-4 rounded-xl border border-gray-800">
+                        <div class="grid grid-cols-3 gap-3 w-full md:w-1/2" id="training-grid">
+                            <!-- JS populate cards -->
+                        </div>
+                        <div class="w-full md:w-1/2 flex flex-col justify-center space-y-3">
+                            <div class="flex justify-between text-xs font-orbitron">
+                                <span>Précision IA Reconnaissance :</span>
+                                <span id="ai-accuracy" class="text-emerald-400 font-bold">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-3 rounded-full overflow-hidden">
+                                <div id="ai-accuracy-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p id="ai-status-text" class="text-xs text-gray-400 italic">Clique sur les images de panneaux STOP pour entraîner l'algorithme...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz Questions NV2 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Q2.1 Responsabilité -->
+                    <div class="p-4 bg-gray-900/80 rounded-xl border border-gray-800">
+                        <h4 class="text-xs font-orbitron text-tech-neon mb-2 font-bold">Q2.1 - Contrainte Sociétale Majeure</h4>
+                        <p class="text-xs text-gray-300 mb-3">Quel est le défi juridique et éthique principal pour le déploiement ?</p>
+                        <select id="q21-select" class="w-full bg-gray-800 border border-gray-700 text-xs text-white rounded-lg p-2.5 focus:border-emerald-400">
+                            <option value="">Sélectionne la réponse...</option>
+                            <option value="A">A. La couleur de la peinture extérieure</option>
+                            <option value="B">B. La responsabilité juridique en cas d'accident</option>
+                            <option value="C">C. La taille des jantes de roues</option>
+                        </select>
+                    </div>
+
+                    <!-- Q2.2 Environnement -->
+                    <div class="p-4 bg-gray-900/80 rounded-xl border border-gray-800">
+                        <h4 class="text-xs font-orbitron text-tech-neon mb-2 font-bold">Q2.2 - Impact Environnemental de l'IA</h4>
+                        <p class="text-xs text-gray-300 mb-3">Quelle est une incidence environnementale négative des serveurs/calculateurs IA ?</p>
+                        <select id="q22-select" class="w-full bg-gray-800 border border-gray-700 text-xs text-white rounded-lg p-2.5 focus:border-emerald-400">
+                            <option value="">Sélectionne la réponse...</option>
+                            <option value="A">A. Consommation élevée d'énergie et d'eau pour le refroidissement</option>
+                            <option value="B">B. Émission directe de CO2 par les lasers LiDAR</option>
+                            <option value="C">C. Pollutions sonores des calculateurs en cabine</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <div id="l2-feedback" class="text-sm font-semibold"></div>
+                    <button onclick="validateLevel2()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-orbitron font-bold px-6 py-2.5 rounded-lg transition flex items-center gap-2 glow-button">
+                        VALIDER LE NIVEAU 2 <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 3: PROMPTING & SÉCURITÉ -->
+        <section id="screen-level-3" class="hidden space-y-6">
+            <div class="bg-tech-card/90 p-6 rounded-2xl border border-tech-border neon-border">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-orbitron text-amber-400 tracking-widest uppercase">Niveau 3 · Appliquer (OST1d / OST1e)</span>
+                        <h2 class="text-2xl font-orbitron font-bold text-white mt-1">Prompt Engineering & Simulation d'Urgence</h2>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold font-orbitron">+100 XP Max</span>
+                </div>
+
+                <!-- Part A: Prompt Construction -->
+                <div class="p-5 bg-gray-900/90 rounded-xl border border-gray-800 mb-6">
+                    <h3 class="text-sm font-orbitron text-white font-semibold mb-2 flex items-center gap-2">
+                        <i data-lucide="terminal" class="w-4 h-4 text-amber-400"></i> Atelier : Rédiger un Prompt Efficace (4 Étapes)
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Complète la structure du prompt pour demander à l'IA une notice technique officielle du capteur **LiDAR**.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-mono text-amber-300 mb-1">1. RÔLE DONNÉ À L'IA :</label>
+                            <input type="text" id="prompt-role" value="Tu es un ingénieur expert en systèmes embarqués." readonly class="w-full bg-gray-800 text-xs text-gray-300 border border-gray-700 rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-mono text-amber-300 mb-1">2. TÂCHE DEMANDÉE :</label>
+                            <select id="prompt-task" class="w-full bg-gray-800 text-xs text-white border border-gray-700 rounded p-2">
+                                <option value="">Choisir la tâche...</option>
+                                <option value="correct">Rédige une notice technique décrivant le fonctionnement du LiDAR Niveau 3</option>
+                                <option value="wrong1">Raconte une histoire drôle sur un laser</option>
+                                <option value="wrong2">Dessine un schéma de voiture électrique</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-mono text-amber-300 mb-1">3. CONTEXTE & DÉTAILS :</label>
+                            <select id="prompt-context" class="w-full bg-gray-800 text-xs text-white border border-gray-700 rounded p-2">
+                                <option value="">Choisir le contexte...</option>
+                                <option value="correct">Explique le principe de mesure, portée, précision, avantages et limites.</option>
+                                <option value="wrong1">Donne uniquement le prix d'achat en euros.</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-mono text-amber-300 mb-1">4. FORMAT DE SORTIE :</label>
+                            <select id="prompt-format" class="w-full bg-gray-800 text-xs text-white border border-gray-700 rounded p-2">
+                                <option value="">Choisir le format...</option>
+                                <option value="correct">Format: Document structuré avec titres et listes à puces.</option>
+                                <option value="wrong1">Format: Un poème en 4 vers.</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B: Emergency Situation Simulation -->
+                <div class="p-5 bg-gray-900/90 rounded-xl border border-gray-800 mb-6">
+                    <h3 class="text-sm font-orbitron text-white font-semibold mb-2 flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i> Simulation : Situation critique Piéton à 50 km/h
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Un piéton traverse hors du passage protégé alors que le véhicule roule à 50 km/h. Les caméras et radars le détectent. Quelle décision l'IA doit-elle exécuter ?
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onclick="selectEmergencyChoice('A')" id="btn-em-A" class="p-3 rounded-lg bg-gray-800 border border-gray-700 text-left hover:border-amber-400 transition">
+                            <div class="font-bold text-xs text-white mb-1">Option A</div>
+                            <div class="text-xs text-gray-400">Accélérer pour doubler le piéton avant son passage.</div>
+                        </button>
+                        <button onclick="selectEmergencyChoice('B')" id="btn-em-B" class="p-3 rounded-lg bg-gray-800 border border-gray-700 text-left hover:border-amber-400 transition">
+                            <div class="font-bold text-xs text-white mb-1">Option B (Recommandée)</div>
+                            <div class="text-xs text-gray-400">Freinage d'urgence immédiat (Protection des usagers vulnérables).</div>
+                        </button>
+                        <button onclick="selectEmergencyChoice('C')" id="btn-em-C" class="p-3 rounded-lg bg-gray-800 border border-gray-700 text-left hover:border-amber-400 transition">
+                            <div class="font-bold text-xs text-white mb-1">Option C</div>
+                            <div class="text-xs text-gray-400">Attendre confirmation par klaxon du conducteur.</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <div id="l3-feedback" class="text-sm font-semibold"></div>
+                    <button onclick="validateLevel3()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-orbitron font-bold px-6 py-2.5 rounded-lg transition flex items-center gap-2 glow-button">
+                        VALIDER LE NIVEAU 3 <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: ENQUÊTE & CHOIX CONSTRUCTEUR -->
+        <section id="screen-level-4" class="hidden space-y-6">
+            <div class="bg-tech-card/90 p-6 rounded-2xl border border-tech-border neon-border">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-orbitron text-purple-400 tracking-widest uppercase">Niveau 4 · Analyser & Argumenter (OST1f)</span>
+                        <h2 class="text-2xl font-orbitron font-bold text-white mt-1">Enquête de Crash & Architecture Finale</h2>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/30 text-xs font-bold font-orbitron">+100 XP Max</span>
+                </div>
+
+                <!-- Crash Analysis Case Study -->
+                <div class="p-4 bg-gray-900/90 rounded-xl border border-gray-800 mb-6">
+                    <div class="flex items-center gap-2 text-red-400 font-orbitron text-xs font-bold mb-2">
+                        <i data-lucide="file-search" class="w-4 h-4"></i> ÉTUDE DE CAS RÉEL (2016) : DYSFONCTIONNEMENT VISION
+                    </div>
+                    <p class="text-xs text-gray-300 leading-relaxed mb-4">
+                        Une voiture autonome équipée de **caméras seules** a percuté un grand camion blanc perpendiculaire sur fond de ciel très clair.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="bg-gray-800/80 p-3 rounded-lg border border-gray-700">
+                            <span class="font-bold text-tech-neon block mb-1">Quelle était la cause technique principale ?</span>
+                            <select id="crash-cause" class="w-full bg-gray-900 text-white border border-gray-700 rounded p-2">
+                                <option value="">Sélectionner...</option>
+                                <option value="correct">Biais/Contraste insuffisant : le système n'avait pas appris à distinguer un camion blanc sur ciel lumineux.</option>
+                                <option value="wrong">Une panne d'essence du véhicule autonomes.</option>
+                            </select>
+                        </div>
+                        <div class="bg-gray-800/80 p-3 rounded-lg border border-gray-700">
+                            <span class="font-bold text-tech-neon block mb-1">Quelle amélioration empêche ce crash ?</span>
+                            <select id="crash-fix" class="w-full bg-gray-900 text-white border border-gray-700 rounded p-2">
+                                <option value="">Sélectionner...</option>
+                                <option value="correct">Fusion de capteurs (Caméra + Radar + LiDAR) pour redondance physique.</option>
+                                <option value="wrong">Peindre la voiture en jaune fluo.</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Strategic Choice: Builder A vs B -->
+                <div class="p-4 bg-gray-900/90 rounded-xl border border-gray-800 mb-6">
+                    <h3 class="text-sm font-orbitron text-white font-semibold mb-3">
+                        Arbitrage Final : Choisis l'Architecture Technologique d'AutonoTech
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Constructeur A -->
+                        <div id="card-builder-a" onclick="selectBuilder('A')" class="p-4 rounded-xl border border-gray-700 bg-gray-800/50 cursor-pointer hover:border-tech-neon transition">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-orbitron font-bold text-sm text-white">CONSTRUCTEUR A</span>
+                                <span class="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">Économique</span>
+                            </div>
+                            <ul class="text-xs text-gray-400 space-y-1 mb-3">
+                                <li>• Capteurs : Caméras uniquement</li>
+                                <li>• Traitement : Réseau de neurones simple</li>
+                                <li>• Avantage : Coût réduit</li>
+                                <li>• Inconvénient : Sensible à la météo/lumière</li>
+                            </ul>
+                        </div>
+
+                        <!-- Constructeur B -->
+                        <div id="card-builder-b" onclick="selectBuilder('B')" class="p-4 rounded-xl border border-gray-700 bg-gray-800/50 cursor-pointer hover:border-emerald-400 transition">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-orbitron font-bold text-sm text-white">CONSTRUCTEUR B (Recommandé)</span>
+                                <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">Sécurité Maximale</span>
+                            </div>
+                            <ul class="text-xs text-gray-400 space-y-1 mb-3">
+                                <li>• Capteurs : Caméras + Radar + LiDAR</li>
+                                <li>• Traitement : Fusion multimodale</li>
+                                <li>• Avantage : Sécurité et redondance absolue</li>
+                                <li>• Inconvénient : Coût & énergie plus élevés</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <div id="l4-feedback" class="text-sm font-semibold"></div>
+                    <button onclick="validateLevel4()" class="bg-purple-500 hover:bg-purple-600 text-slate-900 font-orbitron font-bold px-6 py-2.5 rounded-lg transition flex items-center gap-2 glow-button">
+                        TERMINER LE PROJET <i data-lucide="award" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 5: FINAL DASHBOARD & CERTIFICATE -->
+        <section id="screen-summary" class="hidden space-y-6">
+            <div class="bg-tech-card/95 p-6 md:p-8 rounded-2xl border border-tech-neon/50 neon-border text-center space-y-6">
+                <div class="inline-flex p-3 rounded-full bg-tech-500/20 text-tech-neon border border-tech-neon">
+                    <i data-lucide="trophy" class="w-10 h-10 animate-bounce"></i>
+                </div>
+
+                <div>
+                    <h2 class="font-orbitron font-black text-3xl md:text-4xl text-white">MISSION COMPLÉTÉE !</h2>
+                    <p class="text-gray-300 text-sm mt-2">Bilan d'évaluation des compétences en Technologie 3ème</p>
+                </div>
+
+                <!-- Certificate Card -->
+                <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 max-w-2xl mx-auto text-left space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <div>
+                            <span class="text-xs text-gray-400 font-mono">INGÉNIEUR HOMOLOGUÉ :</span>
+                            <div id="cert-name" class="font-orbitron text-xl text-tech-neon font-bold">Élève</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-400 font-mono">SCORE TOTAL :</span>
+                            <div id="cert-xp" class="font-orbitron text-xl text-emerald-400 font-bold">400 / 400 XP</div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Table Validation -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-orbitron text-gray-400 uppercase font-bold">Validation des Compétences du Programme :</h4>
+                        
+                        <div class="flex justify-between items-center bg-gray-800/60 p-2.5 rounded-lg text-xs">
+                            <span class="text-gray-200"><strong>OST1d :</strong> Identifier les contraintes sociétales & innovations</span>
+                            <span class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">ACQUIS (100%)</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-800/60 p-2.5 rounded-lg text-xs">
+                            <span class="text-gray-200"><strong>OST1e :</strong> Comprendre les types d'apprentissage des IA (Supervisé)</span>
+                            <span class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">ACQUIS (100%)</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-800/60 p-2.5 rounded-lg text-xs">
+                            <span class="text-gray-200"><strong>OST1f :</strong> Argumenter sur les incidences sociétales & environnementales</span>
+                            <span class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">ACQUIS (100%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-4 pt-4">
+                    <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-700 text-white font-orbitron font-bold px-6 py-3 rounded-xl border border-gray-700 transition flex items-center gap-2">
+                        <i data-lucide="printer" class="w-4 h-4"></i> IMPRIMER LE BILAN
+                    </button>
+                    <button onclick="location.reload()" class="bg-gradient-to-r from-tech-500 to-tech-accent text-slate-900 font-orbitron font-bold px-6 py-3 rounded-xl transition flex items-center gap-2 glow-button">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> RECOMMENCER
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-tech-border py-4 px-6 bg-tech-dark text-center text-xs text-gray-500 font-rajdhani">
+        Fiche Activité Élève Technologie 3ème - Conforme BO n°9 du 29 février 2024 · Projet AutonoTech
+    </footer>
+
+    <script>
+        // State Management
+        let state = {
+            studentName: '',
+            xp: 0,
+            unlockedLevels: 1,
+            currentLevel: 0,
+            badges: 0,
+            audioEnabled: false,
+            // Level 2 Mini-game
+            datasetTagged: 0,
+            requiredTags: 3,
+            // Level 3 Emergency Choice
+            emergencyChoice: null,
+            // Level 4 Builder Choice
+            selectedBuilder: null
+        };
+
+        // Initialize Audio (Tone.js)
+        let synth = null;
+        function initAudio() {
+            if (!synth && window.Tone) {
+                synth = new Tone.Synth().toDestination();
+            }
+        }
+
+        function playSound(type) {
+            if (!state.audioEnabled || !synth) return;
+            try {
+                if (type === 'success') {
+                    synth.triggerAttackRelease("C5", "8n");
+                } else if (type === 'error') {
+                    synth.triggerAttackRelease("A2", "8n");
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease("G4", "16n");
+                }
+            } catch(e) {}
+        }
+
+        function toggleAudio() {
+            state.audioEnabled = !state.audioEnabled;
+            const icon = document.getElementById('audio-icon');
+            if (state.audioEnabled) {
+                Tone.start();
+                initAudio();
+                icon.setAttribute('data-lucide', 'volume-2');
+                playSound('click');
+            } else {
+                icon.setAttribute('data-lucide', 'volume-x');
+            }
+            lucide.createIcons();
+        }
+
+        // Start Game Handler
+        function startGame() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            if (!nameInput) {
+                alert("S'il te plaît, entre ton nom avant de commencer la mission !");
+                return;
+            }
+            state.studentName = nameInput;
+            document.getElementById('cert-name').innerText = nameInput;
+
+            document.getElementById('screen-intro').classList.add('hidden');
+            document.getElementById('level-stepper').classList.remove('hidden');
+            
+            switchLevel(1);
+            playSound('success');
+        }
+
+        // Level Navigation
+        function switchLevel(lvl) {
+            if (lvl > state.unlockedLevels) return;
+            state.currentLevel = lvl;
+
+            // Hide all screens
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`screen-level-${i}`).classList.add('hidden');
+                const btn = document.getElementById(`step-btn-${i}`);
+                btn.classList.remove('bg-tech-500', 'text-slate-900', 'border-tech-neon');
+            }
+            document.getElementById('screen-summary').classList.add('hidden');
+
+            // Show active screen
+            document.getElementById(`screen-level-${lvl}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`step-btn-${lvl}`);
+            activeBtn.classList.add('bg-tech-500', 'text-slate-900', 'border-tech-neon');
+
+            if (lvl === 2) initLevel2MiniGame();
+            lucide.createIcons();
+        }
+
+        // Add XP and Update UI
+        function addXP(amount) {
+            state.xp = Math.min(400, state.xp + amount);
+            document.getElementById('xp-bar').style.width = `${(state.xp / 400) * 100}%`;
+            document.getElementById('xp-text').innerText = `${state.xp} / 400 XP`;
+            document.getElementById('cert-xp').innerText = `${state.xp} / 400 XP`;
+        }
+
+        function unlockNextLevel(currentLvl) {
+            state.badges++;
+            document.getElementById('badge-count').innerText = `${state.badges}/4 Badges`;
+
+            if (currentLvl < 4) {
+                state.unlockedLevels = Math.max(state.unlockedLevels, currentLvl + 1);
+                const nextBtn = document.getElementById(`step-btn-${currentLvl + 1}`);
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                setTimeout(() => switchLevel(currentLvl + 1), 1500);
+            } else {
+                setTimeout(() => showSummary(), 1500);
+            }
+        }
+
+        // LEVEL 1 VALIDATION
+        function validateLevel1() {
+            const checkboxes = Array.from(document.querySelectorAll('#q11-options input[type="checkbox"]:checked')).map(cb => cb.value);
+            const m1 = document.getElementById('match-1').value;
+            const m2 = document.getElementById('match-2').value;
+            const m3 = document.getElementById('match-3').value;
+            const m4 = document.getElementById('match-4').value;
+
+            const q11Correct = checkboxes.length === 4 && ['cam','rad','lid','ult'].every(v => checkboxes.includes(v));
+            const q12Correct = (m1 === 'C' && m2 === 'D' && m3 === 'B' && m4 === 'A');
+
+            const feedback = document.getElementById('l1-feedback');
+
+            if (q11Correct && q12Correct) {
+                feedback.className = "text-sm font-semibold text-emerald-400";
+                feedback.innerText = "Excellent ! Tous les capteurs et leurs fonctions sont correctement identifiés.";
+                playSound('success');
+                addXP(100);
+                unlockNextLevel(1);
+            } else {
+                feedback.className = "text-sm font-semibold text-red-400";
+                feedback.innerText = "Certaines associations ou sélections de capteurs sont erronées. Vérifie tes choix !";
+                playSound('error');
+            }
+        }
+
+        // LEVEL 2 MINI GAME
+        function initLevel2MiniGame() {
+            const grid = document.getElementById('training-grid');
+            if (grid.children.length > 0) return; // Already init
+
+            const images = [
+                { id: 1, isStop: true, label: 'STOP' },
+                { id: 2, isStop: false, label: 'CEDEZ LE PASSAGE' },
+                { id: 3, isStop: true, label: 'STOP' },
+                { id: 4, isStop: false, label: 'LIMITATION 50' },
+                { id: 5, isStop: true, label: 'STOP' },
+                { id: 6, isStop: false, label: 'SENS INTERDIT' }
+            ];
+
+            images.forEach(img => {
+                const card = document.createElement('div');
+                card.className = "p-2 bg-gray-800 rounded-lg border border-gray-700 text-center cursor-pointer hover:border-emerald-400 transition flex flex-col items-center justify-center h-20";
+                card.innerHTML = `<span class="text-xs font-bold font-mono text-gray-300">${img.label}</span>`;
+                card.onclick = () => {
+                    if (img.isStop && !card.classList.contains('border-emerald-500')) {
+                        card.classList.add('border-emerald-500', 'bg-emerald-500/20');
+                        state.datasetTagged++;
+                        updateAiAccuracy();
+                    } else if (!img.isStop) {
+                        playSound('error');
+                    }
+                };
+                grid.appendChild(card);
+            });
+        }
+
+        function updateAiAccuracy() {
+            playSound('click');
+            const percent = Math.round((state.datasetTagged / state.requiredTags) * 100);
+            document.getElementById('ai-accuracy').innerText = `${percent}%`;
+            document.getElementById('ai-accuracy-bar').style.width = `${percent}%`;
+
+            if (percent === 100) {
+                document.getElementById('ai-status-text').innerText = "Réseau de neurones parfaitement entraîné sur la détection du panneau STOP !";
+                document.getElementById('ai-status-text').className = "text-xs text-emerald-400 font-bold";
+            }
+        }
+
+        function validateLevel2() {
+            const q21 = document.getElementById('q21-select').value;
+            const q22 = document.getElementById('q22-select').value;
+            const feedback = document.getElementById('l2-feedback');
+
+            if (state.datasetTagged >= 3 && q21 === 'B' && q22 === 'A') {
+                feedback.className = "text-sm font-semibold text-emerald-400";
+                feedback.innerText = "Parfait ! Tu as compris le principe de l'apprentissage supervisé et les contraintes éthiques.";
+                playSound('success');
+                addXP(100);
+                unlockNextLevel(2);
+            } else {
+                feedback.className = "text-sm font-semibold text-red-400";
+                feedback.innerText = "Entraîne l'IA à 100% et réponds correctement aux questions sociétales !";
+                playSound('error');
+            }
+        }
+
+        // LEVEL 3 LOGIC
+        function selectEmergencyChoice(opt) {
+            state.emergencyChoice = opt;
+            ['A', 'B', 'C'].forEach(o => {
+                const btn = document.getElementById(`btn-em-${o}`);
+                if (o === opt) {
+                    btn.classList.add('border-amber-400', 'bg-amber-500/10');
+                } else {
+                    btn.classList.remove('border-amber-400', 'bg-amber-500/10');
+                }
+            });
+            playSound('click');
+        }
+
+        function validateLevel3() {
+            const task = document.getElementById('prompt-task').value;
+            const context = document.getElementById('prompt-context').value;
+            const format = document.getElementById('prompt-format').value;
+            const feedback = document.getElementById('l3-feedback');
+
+            const promptValid = (task === 'correct' && context === 'correct' && format === 'correct');
+            const emergencyValid = (state.emergencyChoice === 'B');
+
+            if (promptValid && emergencyValid) {
+                feedback.className = "text-sm font-semibold text-emerald-400";
+                feedback.innerText = "Prompt valide & décision de sécurité optimale retenue !";
+                playSound('success');
+                addXP(100);
+                unlockNextLevel(3);
+            } else {
+                feedback.className = "text-sm font-semibold text-red-400";
+                feedback.innerText = "Vérifie les 4 étapes de ton prompt et la décision d'urgence !";
+                playSound('error');
+            }
+        }
+
+        // LEVEL 4 LOGIC
+        function selectBuilder(b) {
+            state.selectedBuilder = b;
+            const cardA = document.getElementById('card-builder-a');
+            const cardB = document.getElementById('card-builder-b');
+
+            if (b === 'A') {
+                cardA.classList.add('border-tech-neon', 'bg-tech-500/10');
+                cardB.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+            } else {
+                cardB.classList.add('border-emerald-400', 'bg-emerald-500/10');
+                cardA.classList.remove('border-tech-neon', 'bg-tech-500/10');
+            }
+            playSound('click');
+        }
+
+        function validateLevel4() {
+            const cause = document.getElementById('crash-cause').value;
+            const fix = document.getElementById('crash-fix').value;
+            const feedback = document.getElementById('l4-feedback');
+
+            if (cause === 'correct' && fix === 'correct' && state.selectedBuilder === 'B') {
+                feedback.className = "text-sm font-semibold text-emerald-400";
+                feedback.innerText = "Analyse exacte et choix du Constructeur B validé pour une sécurité maximale !";
+                playSound('success');
+                addXP(100);
+                unlockNextLevel(4);
+            } else {
+                feedback.className = "text-sm font-semibold text-red-400";
+                feedback.innerText = "Analyse du crash incorrecte ou choix d'architecture non sécurisé (Constructeur B recommandé).";
+                playSound('error');
+            }
+        }
+
+        // SHOW SUMMARY & CONFETTI
+        function showSummary() {
+            document.getElementById('screen-level-4').classList.add('hidden');
+            document.getElementById('level-stepper').classList.add('hidden');
+            document.getElementById('screen-summary').classList.remove('hidden');
+
+            if (window.confetti) {
+                confetti({
+                    particleCount: 120,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // Initialize Lucide Icons on Load
+        window.onload = function() {
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
